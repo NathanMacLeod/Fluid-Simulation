@@ -1,8 +1,10 @@
 package fluidsimulation;
 
+import graphics.GridProvider;
+
 import static java.lang.Math.*;
 
-public class Solver {
+public class Solver implements GridProvider<Byte> {
 
     private Cell d;
     private Cell u;
@@ -12,15 +14,14 @@ public class Solver {
     private final int height;
 
     /* Grid cell size and fluid density */
-    double hx;
-    double density;
+    private double hx;
+    private double density;
 
     /* Arrays for: */
-    double[] r; /* Right hand side of pressure solve */
-    double[] p; /* Pressure solution */
+    private double[] r; /* Right hand side of pressure solve */
+    private double[] p; /* Pressure solution */
 
-
-    public Solver(int width, int height, double density) {
+    Solver(int width, int height, double density) {
         this.width = width;
         this.height = height;
         this.density = density;
@@ -41,8 +42,7 @@ public class Solver {
 
         for (int y = 0, idx = 0; y < height; y++) {
             for (int x = 0; x < width; x++, idx++) {
-                r[idx] = -scale * (u.at(x + 1, y) - u.at(x, y) +
-                        v.at(x, y + 1) - v.at(x, y));
+                r[idx] = -scale * (u.get(x + 1, y) - u.get(x, y) + v.get(x, y + 1) - v.get(x, y));
             }
         }
     }
@@ -51,14 +51,14 @@ public class Solver {
      * The solver will run as long as it takes to get the relative error below
      * a threshold, but will never exceed `limit' iterations
      */
-    void project(int limit, double timestep) {
+    private void project(int limit, double timestep) {
         double scale = timestep / (density * hx * hx);
 
         double maxDelta = 0;
         for (int iter = 0; iter < limit; iter++) {
             maxDelta = 0.0;
             for (int y = 0, idx = 0; y < height; y++) {
-                for (int x = 0; x < width; x++, idx++) {
+                for (int x = 0; x < width; x++) {
                     idx = x + y * width;
 
                     double diag = 0.0, offDiag = 0.0;
@@ -102,22 +102,26 @@ public class Solver {
     }
 
     /* Applies the computed pressure to the velocity field */
-    void applyPressure(double timestep) {
+    private void applyPressure(double timestep) {
         double scale = timestep / (density * hx);
 
         for (int y = 0, idx = 0; y < height; y++) {
             for (int x = 0; x < width; x++, idx++) {
-                u.at(x, y) -= scale * p[idx];
-                u.at(x + 1, y) += scale * p[idx];
-                v.at(x, y) -= scale * p[idx];
-                v.at(x, y + 1) += scale * p[idx];
+                u.set(x, y, u.get(x, y) - scale * p[idx]);
+                u.set(x + 1, y, u.get(x + 1, y) + scale * p[idx]);
+                v.set(x, y, v.get(x, y) - scale * p[idx]);
+                v.set(x, y + 1, v.get(x, y + 1) + scale * p[idx]);
             }
         }
 
-        for (int y = 0; y < height; y++)
-            u.at(0, y) = u -> at(width, y) = 0.0;
-        for (int x = 0; x < width; x++)
-            v -> at(x, 0) = v -> at(x, height) = 0.0;
+        for (int y = 0; y < height; y++) {
+            u.set(0, y, 0);
+            u.set(width, y, 0);
+        }
+        for (int x = 0; x < width; x++) {
+            v.set(x, 0, 0);
+            v.set(x, height, 0);
+        }
     }
 
     void update(double timestep) {
@@ -150,11 +154,11 @@ public class Solver {
         double maxVelocity = 0.0;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                /* Average velocity at grid cell center */
-                double u = u.lerp(x + 0.5, y + 0.5);
-                double v = v.lerp(x + 0.5, y + 0.5);
+                /* Average velocity get grid cell center */
+                double a = u.lerp(x + 0.5, y + 0.5);
+                double b = v.lerp(x + 0.5, y + 0.5);
 
-                double velocity = sqrt(u * u + v * v);
+                double velocity = sqrt(a * a + b * b);
                 maxVelocity = max(maxVelocity, velocity);
             }
         }
@@ -164,5 +168,11 @@ public class Solver {
 
         /* Clamp to sensible maximum value in case of very small velocities */
         return min(maxTimestep, 1.0);
+    }
+
+    @Override
+    public Byte provide(int x, int y) {
+        int shade = (int) ((1.0 - d.get(x, y)) * 128.0);
+        return (byte) (128 - shade);
     }
 }
