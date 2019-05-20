@@ -4,51 +4,40 @@ import static java.lang.Math.*;
 
 class Cell {
 
-    /**
-     * height
-     */
     private final double cellSize;
+    private final int width;
+    private final int height;
 
-    /**
-     * width
-     */
-    final int width;
+    double[][] source;
+    private double[][] destination;
 
-    /**
-     * height
-     */
-    final int height;
+    private double xOffset;
+    private double yOffset;
 
-    private double[] source;
-    private double[] destination;
-
-    private double ox;
-    private double oy;
-
-    Cell(int width, int height, double ox, double oy, double cellSize) {
+    Cell(int width, int height, double xOffset, double yOffset, double cellSize) {
         this.width = width;
         this.height = height;
-        this.ox = ox;
-        this.oy = oy;
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
         this.cellSize = cellSize;
 
-        source = new double[width * height];
-        destination = new double[width * height];
+        source = new double[width][height];
+        destination = new double[width][height];
     }
 
     /* Linear intERPolate on grid get coordinates (x, y).
      * Coordinates will be clamped to lie in simulation domain
      */
-    double lerp(double x, double y) {
-        x = min(max(x - ox, 0.0), width - 1.001);
-        y = min(max(y - oy, 0.0), height - 1.001);
+    private double lerp(double x, double y) {
+        x = min(max(x - xOffset, 0.0), width - 1.001);
+        y = min(max(y - yOffset, 0.0), height - 1.001);
         int ix = (int) x;
         int iy = (int) y;
         x -= ix;
         y -= iy;
 
-        double x00 = get(ix, iy), x10 = get(ix + 1, iy);
-        double x01 = get(ix, iy + 1), x11 = get(ix + 1, iy + 1);
+        double x00 = source[ix][ iy], x10 = source[ix + 1][iy];
+        double x01 = source[ix][iy + 1], x11 = source[ix + 1][iy + 1];
 
         return lerp(lerp(x00, x10, x), lerp(x01, x11, x), y);
     }
@@ -58,55 +47,54 @@ class Cell {
      *
      * @param a start of interpolation
      * @param b end of interpolation
-     * @param x value in range
+     * @param v value in range
      * @return linear interpolation
      */
-    private static double lerp(double a, double b, double x) {
-        return a + (b - a) * x;
-    }
-
-    double get(int x, int y) {
-        return source[x + width * y];
-    }
-
-    void set(int x, int y, double value) {
-        source[x + width * y] = value;
+    private static double lerp(double a, double b, double v) {
+        return a + (b - a) * v;
     }
 
     /* Advect grid in velocity field u, v with given timestep */
     void advect(double timestep, Cell u, Cell v) {
         for (int iy = 0, idx = 0; iy < height; iy++) {
             for (int ix = 0; ix < width; ix++, idx++) {
-                double x = ix + ox;
-                double y = iy + oy;
+                double x = ix + xOffset;
+                double y = iy + yOffset;
 
-                double uVel = u.lerp(x, y) / cellSize;
-                double vVel = v.lerp(x, y) / cellSize;
+                double xVel = u.lerp(x, y) / cellSize;
+                double yVel = v.lerp(x, y) / cellSize;
 
-                x -= uVel * timestep;
-                y -= vVel * timestep;
+                x -= xVel * timestep;
+                y -= yVel * timestep;
 
                 /* Second component: Interpolate from grid */
-                destination[idx] = lerp(x, y);
+                destination[ix][iy] = lerp(x, y);
             }
         }
     }
 
-    /* Sets fluid quantity inside the given rect to value `v' */
-    void addInflow(double x0, double y0, double x1, double y1, double v) {
-        int ix0 = (int) (x0 / cellSize - ox);
-        int iy0 = (int) (y0 / cellSize - oy);
-        int ix1 = (int) (x1 / cellSize - ox);
-        int iy1 = (int) (y1 / cellSize - oy);
+    /**
+     * Brings up the values in the region to the given value.
+     * @param x x coordinate of the region
+     * @param y y coordinate of the region
+     * @param width width of region
+     * @param height height of region
+     * @param v value
+     */
+    void setRegion(double x, double y, double width, double height, double v) {
+        int ix0 = (int) (x / cellSize - xOffset);
+        int iy0 = (int) (y / cellSize - yOffset);
+        int ix1 = (int) (width / cellSize - xOffset);
+        int iy1 = (int) (height / cellSize - yOffset);
 
-        for (int y = max(iy0, 0); y < min(iy1, height); y++)
-            for (int x = max(ix0, 0); x < min(ix1, height); x++)
-                if (abs(source[x + y * width]) < abs(v))
-                    source[x + y * width] = v;
+        for (int iy = max(iy0, 0); iy < min(iy1, this.height); iy++)
+            for (int ix = max(ix0, 0); ix < min(ix1, this.height); ix++)
+                if (abs(source[ix][iy]) < abs(v))
+                    source[ix][iy] = v;
     }
 
     void flip() {
-        double[] tmp = source;
+        double[][] tmp = source;
         source = destination;
         destination = tmp;
     }
