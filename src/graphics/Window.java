@@ -5,13 +5,14 @@
  */
 package graphics;
 
+import fluidsimulation.FluidSimulation;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import fluidsimulation.FluidSimulation;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 
 public class Window extends JFrame {
 
@@ -34,16 +35,16 @@ public class Window extends JFrame {
     private void addMouseFunctionality() {
         this.addMouseMotionListener(new MouseAdapter() {
             public void mouseDragged(MouseEvent e) {
-                simulation.applyForce((int)(e.getX()/imageScaleFactor), (int)(e.getY()/imageScaleFactor), 0f, 5.0f);
-                simulation.addDensity((int)(e.getX()/imageScaleFactor), (int)(e.getY()/imageScaleFactor), 500);
+                simulation.applyForce((int) (e.getX() / imageScaleFactor), (int) (e.getY() / imageScaleFactor), 0f, 5.0f);
+                simulation.addDensity((int) (e.getX() / imageScaleFactor), (int) (e.getY() / imageScaleFactor), 500);
             }
         });
     }
-    
+
     @Override
     public synchronized void paint(Graphics g) {
         if (buffer == null)
-        return;
+            return;
         super.paint(g);
 
         g.drawImage(buffer, 0, 30, (int) (imageSize.width * imageScaleFactor), (int) (imageSize.height * imageScaleFactor), null);
