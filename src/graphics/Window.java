@@ -16,29 +16,18 @@ import java.awt.image.DataBufferByte;
 
 public class Window extends JFrame {
 
-    private FluidSimulation simulation;
     private volatile BufferedImage buffer = null;
 
     private final Dimension imageSize;
-    private float imageScaleFactor = 5;
+    private float scale = 5;
 
-    public Window(Dimension size, FluidSimulation simulation) {
+    public Window(Dimension size, float scale) {
         super("Euler Fluid Simulator");
+        this.scale = scale;
         imageSize = size;
-        this.simulation = simulation;
         setSize(size.width * 5, size.height * 5 + 30);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
-        addMouseFunctionality();
-    }
-
-    private void addMouseFunctionality() {
-        this.addMouseMotionListener(new MouseAdapter() {
-            public void mouseDragged(MouseEvent e) {
-                simulation.applyForce((int) (e.getX() / imageScaleFactor), (int) (e.getY() / imageScaleFactor), 0f, 5.0f);
-                simulation.addDensity((int) (e.getX() / imageScaleFactor), (int) (e.getY() / imageScaleFactor), 500);
-            }
-        });
     }
 
     @Override
@@ -47,7 +36,7 @@ public class Window extends JFrame {
             return;
         super.paint(g);
 
-        g.drawImage(buffer, 0, 30, (int) (imageSize.width * imageScaleFactor), (int) (imageSize.height * imageScaleFactor), null);
+        g.drawImage(buffer, 0, 30, (int) (imageSize.width * scale), (int) (imageSize.height * scale), null);
     }
 
     public synchronized void render(GridProvider pixelStream) {
