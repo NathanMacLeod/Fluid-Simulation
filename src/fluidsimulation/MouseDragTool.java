@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.lang.Math.hypot;
+
 class MouseDragTool extends MouseAdapter {
     private float[] previousCoords;
 
@@ -31,7 +33,7 @@ class MouseDragTool extends MouseAdapter {
         }
 
         previousCoords = new float[]{e.getX(), e.getY()};
-        sourceQueue.add(new FluidSource(e.getX(), e.getY(), velocityX, velocityY, 500));
+        sourceQueue.add(new FluidSource(e.getX(), e.getY(), velocityX, velocityY, 6f * (float) hypot(velocityX, velocityY)));
     }
 
     synchronized void consumeSources(Consumer<FluidSource> sourceConsumer) {

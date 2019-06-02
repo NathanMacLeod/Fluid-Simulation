@@ -47,6 +47,7 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
 
         dragTool = new MouseDragTool();
         window = new Window(new Dimension(nTiles, nTiles), SCALE_FACTOR);
+        window.addMouseListener(dragTool);
         window.addMouseMotionListener(dragTool);
     }
 
