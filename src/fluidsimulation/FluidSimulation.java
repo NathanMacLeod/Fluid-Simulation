@@ -13,6 +13,9 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 /**
  * @author macle
  */
@@ -60,15 +63,15 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
         private double[] previousCoords;
 
         public void mousePressed(MouseEvent e) {
-            previousCoords = new double[] {e.getX(), e.getY()};
+            previousCoords = new double[]{e.getX(), e.getY()};
         }
 
         public void mouseDragged(MouseEvent e) {
-            float[] velocityVector = new float[] {0, 0};
-            if(previousCoords != null)
-                velocityVector = new float[] {dragScalar * (float)(e.getX() - previousCoords[0]), dragScalar * (float)(e.getY() - previousCoords[1])};
-            previousCoords = new double[] {e.getX(), e.getY()};
-            synchronized(queuedAddDensity) {
+            float[] velocityVector = new float[]{0, 0};
+            if (previousCoords != null)
+                velocityVector = new float[]{dragScalar * (float) (e.getX() - previousCoords[0]), dragScalar * (float) (e.getY() - previousCoords[1])};
+            previousCoords = new double[]{e.getX(), e.getY()};
+            synchronized (queuedAddDensity) {
                 queuedAddForce.add(new ForcePack((int) (e.getX() / SCALE_FACTOR), (int) (e.getY() / SCALE_FACTOR), velocityVector[0], velocityVector[1]));
                 queuedAddDensity.add(new DensityPack(getTileN((int) (e.getX() / SCALE_FACTOR), (int) (e.getY() / SCALE_FACTOR)), 500));
             }
@@ -106,15 +109,14 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
             }
         }
     }
-    
+
     public Number provide(int i, int j) {
         float num = density[getTileN(i, j)];
-        //float num = Math.abs(velocY[getTileN(i, j)] * 50);
-        return (byte) ((num > 255)? 255 : num);
-    } 
+        //float num = Math.abs(velocX[getTileN(i, j)]) * 25;
+        return (byte) ((num > 255) ? 255 : num);
+    }
 
     private void fluidUpdate(float dt) {
-
         // Add inflow of density
         addSource();
         addForces();
@@ -192,29 +194,23 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
     }
 
     private void advect(float[] src, float[] dst, float[] velX, float[] velY, float dt, int b) {
-        for (int i = 1; i < nTiles - 1; i++) {
-            for (int j = 1; j < nTiles - 1; j++) {
+        for (int ix = 1; ix < nTiles - 1; ix++) {
+            for (int iy = 1; iy < nTiles - 1; iy++) {
                 //center of tile
-                float x = i-dt*velocX[getTileN(i,j)];
-                float y = j-dt*velocY[getTileN(i, j)];
-                if (x < 1.5)
-                    x = 1.5f;
-                if (x > nTiles - 0.5f)
-                    x = nTiles - 0.5f;
-                int i0=(int)x;
-                int i1=i0+1;
-                if (y<0.5)
-                    y = 0.5f;
-                if (y > nTiles - 0.5f)
-                    y = nTiles - 0.5f;
-                int j0=(int)y;
-                int j1=j0+1;
-                float s1 = x-i0;
-                float s0 = 1-s1;
-                float t1 = y-j0;
-                float t0 = 1-t1;
-                dst[getTileN(i,j)] = s0*(t0*src[getTileN(i0,j0)]+t1* src[getTileN(i0,j1)])+
-                        s1*(t0*src[getTileN(i1,j0)]+t1*src[getTileN(i1,j1)]);
+                float x = ix - dt * velocX[getTileN(ix, iy)];
+                float y = iy - dt * velocY[getTileN(ix, iy)];
+
+                x = (float) min(max(x, 1.5), nTiles - 0.5);
+                y = (float) min(max(y, 0.5), nTiles - 0.5);
+
+                int i0 = (int) x;
+                int j0 = (int) y;
+
+                float t1 = y - j0;
+                float t0 = 1 - t1;
+
+                dst[getTileN(ix, iy)] = (1 + i0 - x) * (t0 * src[getTileN(i0, j0)] + t1 * src[getTileN(i0, j0 + 1)]) +
+                        (x - i0) * (t0 * src[getTileN(i0 + 1, j0)] + t1 * src[getTileN(i0 + 1, j0 + 1)]);
             }
         }
         setBounds(b, dst);
@@ -224,8 +220,8 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
         //adjusts velocty field to make sure that the flow into a tile equals the flow out
         float[] divergance = new float[totalNumberTiles];
         float[] pressure = new float[totalNumberTiles];
-        for(int i = 1; i < nTiles - 1; i++) {
-            for(int j = 1; j < nTiles - 1; j++) {
+        for (int i = 1; i < nTiles - 1; i++) {
+            for (int j = 1; j < nTiles - 1; j++) {
                 divergance[getTileN(i, j)] = (float) -(0.5 * (velocX[getTileN(i + 1, j)]
                         - velocX[getTileN(i - 1, j)] + velocY[getTileN(i, j + 1)] - velocY[getTileN(i, j - 1)]));
             }
@@ -241,8 +237,8 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
             }
             setBounds(0, pressure);
         }
-        for(int i = 1; i < nTiles - 1; i++) {
-            for(int j = 1; j < nTiles - 1; j++) {
+        for (int i = 1; i < nTiles - 1; i++) {
+            for (int j = 1; j < nTiles - 1; j++) {
                 velocX[getTileN(i, j)] -= 0.5 * (pressure[getTileN(i + 1, j)] - pressure[getTileN(i - 1, j)]);
                 velocY[getTileN(i, j)] -= 0.5 * (pressure[getTileN(i, j + 1)] - pressure[getTileN(i, j - 1)]);
             }
