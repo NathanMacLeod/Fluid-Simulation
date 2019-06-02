@@ -17,7 +17,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
- * @author macle
+ * @author macle, meggitt
  */
 public class FluidSimulation implements Runnable, graphics.GridProvider {
     private float[] velocX;
@@ -29,7 +29,6 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
     private final List<DensityPack> queuedAddDensity;
     private final List<ForcePack> queuedAddForce;
     private float timeStep;
-    private float tileSize;
     private int nTiles;
     private int totalNumberTiles;
     private float diffuseFactor;
@@ -38,7 +37,7 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
 
     private final static float SCALE_FACTOR = 5;
 
-    private FluidSimulation(int nTiles, int tileSize, float diffuseFactor, float timeStep) {
+    private FluidSimulation(int nTiles, float diffuseFactor, float timeStep) {
         totalNumberTiles = nTiles * nTiles;
         //Area is a square with n by n tiles, tiles go in order from left to right, top to bottum, starting in top left corner
         velocX = new float[totalNumberTiles];
@@ -51,7 +50,6 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
         queuedAddForce = new ArrayList<>();
         this.timeStep = timeStep;
         this.nTiles = nTiles;
-        this.tileSize = tileSize;
         this.diffuseFactor = diffuseFactor;
         window = new Window(new Dimension(nTiles, nTiles), SCALE_FACTOR);
 
@@ -59,21 +57,28 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
     }
 
     private class mouseDragTool extends MouseAdapter {
-        private float dragScalar = 10f;
-        private double[] previousCoords;
+        private float[] previousCoords;
 
         public void mousePressed(MouseEvent e) {
-            previousCoords = new double[]{e.getX(), e.getY()};
+            previousCoords = new float[]{e.getX(), e.getY()};
         }
 
         public void mouseDragged(MouseEvent e) {
-            float[] velocityVector = new float[]{0, 0};
-            if (previousCoords != null)
-                velocityVector = new float[]{dragScalar * (float) (e.getX() - previousCoords[0]), dragScalar * (float) (e.getY() - previousCoords[1])};
-            previousCoords = new double[]{e.getX(), e.getY()};
+            float velocityX = 0;
+            float velocityY = 0;
+
+            float dragScalar = 10f;
+
+            if (previousCoords != null) {
+                velocityX = dragScalar * (e.getX() - previousCoords[0]);
+                velocityY = dragScalar * (e.getY() - previousCoords[1]);
+            }
+
+            previousCoords = new float[]{e.getX(), e.getY()};
+
             synchronized (queuedAddDensity) {
-                queuedAddForce.add(new ForcePack((int) (e.getX() / SCALE_FACTOR), (int) (e.getY() / SCALE_FACTOR), velocityVector[0], velocityVector[1]));
-                queuedAddDensity.add(new DensityPack(getTileN((int) (e.getX() / SCALE_FACTOR), (int) (e.getY() / SCALE_FACTOR)), 500));
+                queuedAddForce.add(new ForcePack(e.getX(), e.getY(), velocityX, velocityY));
+                queuedAddDensity.add(new DensityPack(e.getX(), e.getY(), 500));
             }
         }
     }
@@ -172,7 +177,7 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
     private void addSource() {
         synchronized (queuedAddDensity) {
             for (DensityPack pack : queuedAddDensity) {
-                density[pack.n] += pack.density;
+                density[getTileN(pack.x, pack.y)] += pack.density;
             }
             queuedAddDensity.clear();
         }
@@ -204,7 +209,7 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
                 y = (float) min(max(y, 0.5), nTiles - 0.5);
 
                 int i0 = (int) x;
-                int j0 = (int) y;
+                int j0 = (int) max(y, 1);
 
                 float t1 = y - j0;
                 float t0 = 1 - t1;
@@ -269,25 +274,27 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
         int y;
 
         ForcePack(int x, int y, float forceX, float forceY) {
-            this.x = x;
-            this.y = y;
+            this.x = (int) (x / SCALE_FACTOR);
+            this.y = (int) (y / SCALE_FACTOR);
             this.forceX = forceX;
             this.forceY = forceY;
         }
     }
 
     private class DensityPack {
-        int n;
         float density;
+        int x;
+        int y;
 
-        DensityPack(int n, float density) {
-            this.n = n;
+        DensityPack(int x, int y, float density) {
+            this.x = (int) (x / SCALE_FACTOR);
+            this.y = (int) (y / SCALE_FACTOR);
             this.density = density;
         }
     }
 
     public static void main(String[] args) {
-        new FluidSimulation(128, 1, 4f, 0.06f).start();
+        new FluidSimulation(128, 4f, 0.06f).start();
     }
 
 }
