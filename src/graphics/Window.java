@@ -5,12 +5,9 @@
  */
 package graphics;
 
-import fluidsimulation.FluidSimulation;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
@@ -19,7 +16,7 @@ public class Window extends JFrame {
     private volatile BufferedImage buffer = null;
 
     private final Dimension imageSize;
-    private float scale = 5;
+    private float scale;
 
     public Window(Dimension size, float scale) {
         super("Euler Fluid Simulator");

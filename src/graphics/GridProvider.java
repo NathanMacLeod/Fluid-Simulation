@@ -7,12 +7,7 @@ package graphics;
 
 public interface GridProvider<N extends Number> {
 
-    /**
-     * Provide a pixel at some coordinates
-     * @param x
-     * @param y
-     * @return
-     */
+    // Provide a pixel at some coordinates
     N provide(int x, int y);
 
 }

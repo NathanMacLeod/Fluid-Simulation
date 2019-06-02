@@ -207,18 +207,18 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
         setBounds(2, velocY);
     }
 
-    private void setBounds(int b, float[] x) {
+    private void setBounds(int b, float[] arr) {
         for (int i = 1; i < nTiles - 1; i++) {
-            x[getTileN(0, i)] = (b == 1) ? -x[getTileN(1, i)] : x[getTileN(1, i)];
-            x[getTileN(nTiles - 1, i)] = (b == 1) ? -x[getTileN(nTiles - 2, i)] : x[getTileN(nTiles - 2, i)];
-            x[getTileN(i, 0)] = (b == 2) ? -x[getTileN(i, 1)] : x[getTileN(i, 1)];
-            x[getTileN(i, nTiles - 1)] = (b == 2) ? -x[getTileN(i, nTiles - 2)] : x[getTileN(i, nTiles - 2)];
+            arr[getTileN(0, i)] = (b == 1) ? -arr[getTileN(1, i)] : arr[getTileN(1, i)];
+            arr[getTileN(nTiles - 1, i)] = (b == 1) ? -arr[getTileN(nTiles - 2, i)] : arr[getTileN(nTiles - 2, i)];
+            arr[getTileN(i, 0)] = (b == 2) ? -arr[getTileN(i, 1)] : arr[getTileN(i, 1)];
+            arr[getTileN(i, nTiles - 1)] = (b == 2) ? -arr[getTileN(i, nTiles - 2)] : arr[getTileN(i, nTiles - 2)];
         }
 
-        x[getTileN(0, 0)] = (float) (0.5 * (x[getTileN(1, 0)] + x[getTileN(0, 1)]));
-        x[getTileN(0, nTiles - 1)] = (float) (0.5 * (x[getTileN(1, nTiles - 1)] + x[getTileN(0, nTiles - 2)]));
-        x[getTileN(nTiles - 1, 0)] = (float) (0.5 * (x[getTileN(nTiles - 2, 0)] + x[getTileN(nTiles - 1, 1)]));
-        x[getTileN(nTiles - 1, nTiles - 1)] = (float) (0.5 * (x[getTileN(nTiles - 2, nTiles - 1)] + x[getTileN(nTiles - 1, nTiles - 2)]));
+        arr[getTileN(0, 0)] = (float) (0.5 * (arr[getTileN(1, 0)] + arr[getTileN(0, 1)]));
+        arr[getTileN(0, nTiles - 1)] = (float) (0.5 * (arr[getTileN(1, nTiles - 1)] + arr[getTileN(0, nTiles - 2)]));
+        arr[getTileN(nTiles - 1, 0)] = (float) (0.5 * (arr[getTileN(nTiles - 2, 0)] + arr[getTileN(nTiles - 1, 1)]));
+        arr[getTileN(nTiles - 1, nTiles - 1)] = (float) (0.5 * (arr[getTileN(nTiles - 2, nTiles - 1)] + arr[getTileN(nTiles - 1, nTiles - 2)]));
     }
 
     public static void main(String[] args) {
