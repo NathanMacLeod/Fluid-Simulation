@@ -185,7 +185,7 @@ public class FluidSimulation implements Runnable, graphics.GridProvider {
             for (int i = 1; i < nTiles - 1; i++) {
                 for (int j = 1; j < nTiles - 1; j++) {
                     dst[getTileN(i, j)] = (src[getTileN(i, j)] + diffuseRate * (
-                            dst[getTileN(i + 1, j)] + src[getTileN(i - 1, j)] +
+                            dst[getTileN(i + 1, j)] + dst[getTileN(i - 1, j)] +
                                     dst[getTileN(i, j + 1)] + dst[getTileN(i, j - 1)])) / (1 + 4 * diffuseRate);
                 }
             }
