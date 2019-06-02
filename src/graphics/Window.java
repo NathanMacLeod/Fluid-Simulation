@@ -34,7 +34,6 @@ public class Window extends JFrame {
     public synchronized void paint(Graphics g) {
         if (buffer == null)
             return;
-        super.paint(g);
 
         g.drawImage(buffer, 0, 30, (int) (imageSize.width * scale), (int) (imageSize.height * scale), null);
     }
